@@ -4,6 +4,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    # These defaults are for local development only. Configure secrets and paths in the
+    # repository-root .env file (see .env.example) before sharing or deploying an instance.
     database_url: str = "sqlite:///./chainofcustody.db"
     storage_dir: Path = Path("./storage")
     max_upload_bytes: int = 50 * 1024 * 1024

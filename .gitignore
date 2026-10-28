@@ -1,10 +1,12 @@
 .venv/
-node_modules/
-dist/
+venv/
 __pycache__/
+*.py[cod]
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+node_modules/
+dist/
 .coverage
 coverage/
 *.log
@@ -25,3 +27,5 @@ contracts/cache/
 contracts/node_modules/
 frontend/.vite/
 frontend/*.tsbuildinfo
+.idea/
+.vscode/

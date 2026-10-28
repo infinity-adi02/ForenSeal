@@ -4,56 +4,86 @@ ForenSeal is a digital forensics integrity and custody demonstration. It fingerp
 
 ## Requirements
 
-- Python 3.12 or 3.13 recommended
-- Node.js 22 and npm 10+
-- Hardhat local EVM (included under `contracts/`)
+- Python 3.12 (recommended; 3.13 should also work)
+- Node.js 22 and npm 10 or newer
+- Git
 
-Python 3.14 also installed successfully in the development environment, but 3.12 is the documented baseline for clean installs.
+The app uses SQLite by default; no separate database server or credentials are required for local development. A local Hardhat EVM is included for blockchain anchoring. You can run the web app without it, but chain-dependent features need the node and deployed contract running.
 
-## Start the application
+## Clone and configure
 
-From the repository root, prepare the API:
+Clone the repository from its GitHub page. Replace `OWNER` and `REPOSITORY` below with the GitHub account and repository name, then run:
 
 ```sh
+git clone https://github.com/OWNER/REPOSITORY.git
+cd REPOSITORY
 cp .env.example .env
-python3.12 -m venv .venv
-source .venv/bin/activate
-pip install -r backend/requirements.txt
 ```
 
-Start the local EVM in one terminal:
+Edit `.env` before starting the API:
+
+- Set a long, unique `JWT_SECRET`.
+- Set `BOOTSTRAP_ADMIN_USERNAME` and a unique `BOOTSTRAP_ADMIN_PASSWORD`. On the first API start, these values create the initial administrator. If you change them after the account is created, the existing account is not renamed or reset automatically.
+- Set `FINGERPRINT_REVEAL_CODE` to a private value, or leave it empty to keep original SHA-256 fingerprints hidden.
+- Keep `FRONTEND_ORIGIN=http://localhost:5173` unless you run Vite on a different origin; the API uses this value for CORS.
+- Keep `BLOCKCHAIN_RPC_URL=http://127.0.0.1:8545` when using the included Hardhat node.
+
+The settings and their local-development defaults are documented beside the fields in [backend/app/config.py](backend/app/config.py); the copyable template is [.env.example](.env.example). Never commit `.env`, real credentials, investigation data, local databases, generated contract deployments, or uploaded evidence. The `.gitignore` excludes these local files. The SQLite database and evidence storage directory are created under `backend/` at runtime; this default database is local application data, not a shared or hosted database.
+
+## Install dependencies
+
+From the repository root, create a Python environment and install the API dependencies:
+
+```sh
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r backend/requirements.txt
+```
+
+Install JavaScript dependencies separately for the frontend and contract toolchain:
+
+```sh
+cd frontend && npm ci
+cd ../contracts && npm ci
+```
+
+The committed npm lock files make `npm ci` reproducible. If you change a dependency intentionally, update the corresponding lock file with npm and commit both files.
+
+## Run the application
+
+For the complete local blockchain workflow, start the Hardhat node in terminal 1:
 
 ```sh
 cd contracts
-npm install
 npm run node
 ```
 
-Deploy the contract in a second terminal:
+In terminal 2, deploy `EvidenceLedger` to that running node:
 
 ```sh
 cd contracts
 npm run deploy:local
 ```
 
-The deploy script writes the address, chain ID, and ABI to the ignored local file `backend/app/contract_deployment.json`. A Hardhat node reset invalidates its in-memory state; restart the node and redeploy before treating roots as available.
+Deployment writes the local contract address, chain ID, and ABI to the ignored file `backend/app/contract_deployment.json`. The local node keeps chain data in memory. If it is stopped or reset, restart it and redeploy; the old deployment file alone does not mean the contract still exists on the chain.
 
-Start the API and frontend in separate terminals:
+Start the API in terminal 3 (from the `backend/` directory):
 
 ```sh
-# terminal 3
 cd backend
 ../.venv/bin/uvicorn app.main:app --reload
+```
 
-# terminal 4
+Start Vite in terminal 4:
+
+```sh
 cd frontend
-npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. The API is at `http://localhost:8000`, and FastAPI OpenAPI docs are at `/docs`.
+Open `http://localhost:5173`. The API is at `http://localhost:8000`, health check at `/api/health`, and interactive API documentation at `http://localhost:8000/docs`. If the UI uses a different host or port, update `FRONTEND_ORIGIN` in `.env` to match and restart the API.
 
-The first API startup creates an administrator using `BOOTSTRAP_ADMIN_USERNAME` and `BOOTSTRAP_ADMIN_PASSWORD` from `.env`. Replace all placeholder values in `.env`, including the JWT secret and fingerprint reveal code, before running the application. The reveal code is unset by default, so fingerprints remain hidden until configured.
+The frontend uses Vite's `/api` proxy to reach the API at `http://localhost:8000`; change `frontend/vite.config.ts` if you need a different API address. There are no frontend-specific secrets or database settings. For a non-local database, configure `DATABASE_URL` in `.env` and install the matching SQLAlchemy database driver yourself; SQLite is the only database driver included in the default install and the documented local setup.
 
 ## Implemented capabilities
 
