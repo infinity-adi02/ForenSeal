@@ -1,0 +1,11 @@
+fastapi==0.121.0
+uvicorn[standard]==0.38.0
+sqlalchemy==2.0.44
+pydantic-settings==2.11.0
+python-multipart==0.0.20
+PyJWT==2.10.1
+pwdlib[argon2]==0.2.1
+reportlab==4.4.4
+web3==7.14.0
+pytest==8.4.2
+httpx==0.28.1
